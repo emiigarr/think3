@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial Analysis with Mapbox and Turf.js</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100vw; height: 100vh; }
+        .controls { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 5px; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="controls">
+        <button onclick="measureDistance()">Measure Distance</button>
+        <button onclick="findNearest()">Find Nearest</button>
+        <button onclick="createBuffer()">Create Buffer</button>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-122.335167, 47.608013], // Seattle
+            zoom: 12
+        });
+
+        const points = [
+            turf.point([-122.3301, 47.6097]), // Sample locations
+            turf.point([-122.3493, 47.6205]),
+            turf.point([-122.3215, 47.6049])
+        ];
+        
+        points.forEach(pt => {
+            new mapboxgl.Marker().setLngLat(pt.geometry.coordinates).addTo(map);
+        });
+
+        function measureDistance() {
+            const from = points[0];
+            const to = points[1];
+            const distance = turf.distance(from, to, { units: 'kilometers' });
+
+            alert(`Distance: ${distance.toFixed(2)} km`);
+        }
+
+        function findNearest() {
+            const target = turf.point([-122.340, 47.615]); // Random target point
+            const nearest = turf.nearestPoint(target, turf.featureCollection(points));
+
+            new mapboxgl.Marker({ color: 'red' })
+                .setLngLat(target.geometry.coordinates)
+                .addTo(map);
+
+            alert(`Nearest point: ${nearest.geometry.coordinates}`);
+        }
+
+        function createBuffer() {
+            const buffer = turf.buffer(points[0], 1, { units: 'kilometers' });
+
+            map.addLayer({
+                id: 'buffer-layer',
+                type: 'fill',
+                source: {
+                    type: 'geojson',
+                    data: buffer
+                },
+                paint: {
+                    'fill-color': 'blue',
+                    'fill-opacity': 0.3
+                }
+            });
+        }
+    </script>
+</body>
+</html>
